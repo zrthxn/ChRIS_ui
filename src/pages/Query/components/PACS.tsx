@@ -3,7 +3,6 @@ import Wrapper from "../../../containers/Layout/PageWrapper";
 import { Button, Dropdown, DropdownItem, DropdownToggle, Grid ,GridItem, Split, SplitItem } from "@patternfly/react-core";
 import { Card, CardBody, CardHeader, CardExpandableContent } from "@patternfly/react-core";
 import { Table, TableHeader, TableBody } from "@patternfly/react-table";
-import { ToggleGroup, ToggleGroupItem } from "@patternfly/react-core";
 
 export const PACS = () => {
   const [toggle, setToggle] = useState(false)
