@@ -3,23 +3,24 @@ import { Route, Switch } from "react-router-dom";
 
 interface RouterContextProps<S, A = any> {
   state: S
-  actions: A
+  actions?: A
 }
 
-type RouterContextType<S, A = any> = React.Context<{
+type RouterContextType<S, A = any> = React.Context<RouterObjectType<S,A>>
+type RouterObjectType<S, A = any> = { 
   state: S
-  actions: A
-  route: (path:string) => any
-}>
+  actions?: A
+  route: (path:string) => any 
+}
 
-export function RouterContext<S, A = any>
+export function RouterContext<S, A>
   ({ state, actions }: RouterContextProps<S,A>): [S, RouterContextType<S,A>] {
   return [
     state, 
-    React.createContext({
+    React.createContext<RouterObjectType<S,A>>({
       route: (path: string) => path,
       actions,
-      state,
+      state
     })
   ]
 }
@@ -28,7 +29,7 @@ interface RouterProviderProps<S = any, A = any> {
   context: RouterContextType<S>
   state: S
   actions: A
-  route: string
+  route?: string
   setRoute: (route?:string) => any
   children: React.ReactNode
 }
