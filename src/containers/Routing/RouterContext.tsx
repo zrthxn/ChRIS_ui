@@ -1,5 +1,5 @@
-import React from 'react';
-import { Route, Switch } from 'react-router-dom';
+import React from "react";
+import { Route, Switch } from "react-router-dom";
 
 interface RouterContextProps<S, A = any> {
   state: S
@@ -12,7 +12,8 @@ type RouterContextType<S, A = any> = React.Context<{
   route: (path:string) => any
 }>
 
-export function RouterContext<S,A>({ state, actions }: RouterContextProps<S,A>): [S, RouterContextType<S,A>] {
+export function RouterContext<S, A = any>
+  ({ state, actions }: RouterContextProps<S,A>): [S, RouterContextType<S,A>] {
   return [
     state, 
     React.createContext({
@@ -23,18 +24,17 @@ export function RouterContext<S,A>({ state, actions }: RouterContextProps<S,A>):
   ]
 }
 
-interface RouterProviderProps<S = any> {
-  state: S
-  actions: any
+interface RouterProviderProps<S = any, A = any> {
   context: RouterContextType<S>
-  route?: string
+  state: S
+  actions: A
+  route: string
   setRoute: (route?:string) => any
   children: React.ReactNode
 }
 
-export function RouterProvider(
-  { context, actions, state, route, setRoute, children }: RouterProviderProps
-) {
+export function RouterProvider
+  ({ context, actions, state, route, setRoute, children }: RouterProviderProps) {
   return (
     <Route render={({ history, match }) => {
       if (route) {
