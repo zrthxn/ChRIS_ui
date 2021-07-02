@@ -11,6 +11,7 @@ const Status = () => {
   const pluginInstanceResource = usePluginInstanceResource();
   const pluginStatus =
     pluginInstanceResource && pluginInstanceResource.pluginStatus;
+
   if (pluginStatus && pluginStatus.length > 0) {
     return (
       <>
@@ -37,9 +38,11 @@ const Status = () => {
                 status={
                   label.status === true
                     ? "finish"
+                    : label.processError === true
+                    ? "wait"
                     : label.error === true
                     ? "error"
-                    : undefined
+                    : "process"
                 }
               />
             );

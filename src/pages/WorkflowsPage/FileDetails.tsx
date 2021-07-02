@@ -1,14 +1,15 @@
 import React from "react";
 import { useHistory } from "react-router-dom";
 import {
-  PageSection,
   Card,
-  CardTitle,
   CardBody,
   Button,
   OptionsMenu,
   OptionsMenuItem,
   OptionsMenuToggle,
+  Form,
+  TextInput,
+  Alert,
 } from "@patternfly/react-core";
 import FileUpload from "../../components/common/fileupload";
 import { Steps } from "antd";
@@ -17,6 +18,7 @@ import {
   setLocalFile,
   submitAnalysis,
   setOptionState,
+  setInfantAge,
   resetWorkflowState,
   deleteLocalFile,
 } from "../../store/workflows/actions";
@@ -29,30 +31,19 @@ const { Step } = Steps;
 const workflows = [
   "covidnet",
   "infant-freesurfer",
+  "infant-freesurfer-age",
   "adult-freesurfer",
   "fastsurfer",
   "fetal-reconstruction",
 ];
 
 const FileDetails = () => {
-  const isAnalysisRunning = useTypedSelector(
-    (state) => state.workflows.isAnalysisRunning
-  );
   return (
-    <PageSection>
-      <Card>
-        <CardTitle>
-          {isAnalysisRunning === true
-            ? "Runnng an Analysis"
-            : "Run an Analysis"}
-        </CardTitle>
-        <CardBody>
-          <FileUploadComponent />
-          <SelectWorkflow />
-          <SubmitAnalysis />
-        </CardBody>
-      </Card>
-    </PageSection>
+    <>
+      <FileUploadComponent />
+      <SelectWorkflow />
+      <SubmitAnalysis />
+    </>
   );
 };
 
@@ -74,12 +65,13 @@ const FileUploadComponent = () => {
   return (
     <Card className="file-upload-card">
       <CardBody>
-        <h1 className="pf-c-title pf-m-2xl">
+        <h1 className="pf-c-title pf-m-lg">
           File Selection: Local File Upload
         </h1>
-        <p>Choose files from your local computer to create a feed</p>
+        <p>Choose files from your local computer to run a workflow</p>
         <br />
         <FileUpload
+          className="workflow-file-upload"
           handleDeleteDispatch={handleDeleteDispatch}
           localFiles={files}
           dispatchFn={handleDispatch}
@@ -90,8 +82,20 @@ const FileUploadComponent = () => {
 };
 
 const SelectWorkflow = () => {
+  const [error, setError] = React.useState("");
   const dispatch = useDispatch();
   const optionState = useTypedSelector((state) => state.workflows.optionState);
+  const username = useTypedSelector((state) => state.user.username);
+  const localFiles = useTypedSelector(
+    (state) => state.workflows.localfilePayload.files
+  );
+
+  const infantAge = useTypedSelector((state) => state.workflows.infantAge);
+
+  React.useEffect(() => {
+    if (infantAge) setError("");
+    if (localFiles.length < 15) setError("");
+  }, [infantAge, localFiles]);
   const { selectedOption, isOpen, toggleTemplateText } = optionState;
 
   const handleSelect = (
@@ -107,6 +111,7 @@ const SelectWorkflow = () => {
           ...optionState,
           toggleTemplateText: id,
           selectedOption: id,
+          isOpen: !isOpen,
         })
       );
   };
@@ -118,6 +123,35 @@ const SelectWorkflow = () => {
         isOpen: !isOpen,
       })
     );
+  };
+
+  const dispatchAction = () => {
+    if (localFiles.length > 0 && username) {
+      dispatch(
+        submitAnalysis({
+          localFiles,
+          username,
+          workflowType: selectedOption,
+          infantAge,
+        })
+      );
+    }
+  };
+
+  const handleClick = () => {
+    if (selectedOption === "infant-freesurfer-age") {
+      if (!infantAge) {
+        setError("Please enter an age for the infant");
+      } else {
+        dispatchAction();
+      }
+    } else if (selectedOption === "covidnet") {
+      if (localFiles.length > 15) {
+        setError("The covidnet workflow can only run on 15 files or less");
+      } else {
+        dispatchAction();
+      }
+    } else dispatchAction();
   };
 
   const menuItems = workflows.map((workflow: string, index: number) => {
@@ -140,6 +174,10 @@ const SelectWorkflow = () => {
     />
   );
 
+  const handleInputChange = (value: string) => {
+    dispatch(setInfantAge(value));
+  };
+
   return (
     <Card>
       <CardBody>
@@ -149,6 +187,24 @@ const SelectWorkflow = () => {
           menuItems={menuItems}
           toggle={toggle}
         />
+        <Button 
+        className='workflow-button'
+        onClick={handleClick}>Submit An Analysis</Button>
+        {selectedOption === "infant-freesurfer-age" && (
+          <div className="workflow-form">
+            <Form isHorizontal>
+              <TextInput
+                isRequired
+                type="text"
+                id="infant-age"
+                name="infant-age"
+                onChange={handleInputChange}
+                placeholder="Enter an Infant's age"
+              />
+            </Form>
+          </div>
+        )}
+        {error && <Alert title={error} />}
       </CardBody>
     </Card>
   );
@@ -158,26 +214,7 @@ const SubmitAnalysis = () => {
   const dispatch = useDispatch();
   const history = useHistory();
 
-  const localFiles = useTypedSelector(
-    (state) => state.workflows.localfilePayload.files
-  );
-  const workflowType = useTypedSelector(
-    (state) => state.workflows.optionState.selectedOption
-  );
-  const username = useTypedSelector((state) => state.user.username);
-
   const steps = useTypedSelector((state) => state.workflows.steps);
-  const handleClick = () => {
-    if (localFiles.length > 0 && username) {
-      dispatch(
-        submitAnalysis({
-          localFiles,
-          workflowType,
-          username,
-        })
-      );
-    }
-  };
 
   const feedId = useTypedSelector((state) => state.workflows.checkFeedDetails);
   const isAnalysisRunning = useTypedSelector(
@@ -186,14 +223,6 @@ const SubmitAnalysis = () => {
 
   return (
     <Card>
-      <CardBody>
-        <Button
-          isDisabled={!workflowType || isAnalysisRunning ? true : false}
-          onClick={handleClick}
-        >
-          Submit An Analysis
-        </Button>
-      </CardBody>
       <CardBody>
         <Steps>
           {steps.map((step: AnalysisStep) => {
@@ -227,7 +256,7 @@ const SubmitAnalysis = () => {
           onClick={() => dispatch(resetWorkflowState())}
           isDisabled={isAnalysisRunning ? true : false}
         >
-          Start a new workflow
+          Reset Page
         </Button>
       </CardBody>
     </Card>

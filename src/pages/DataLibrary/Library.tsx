@@ -4,10 +4,10 @@ import { RouterContext, RouterProvider } from "../../containers/Routing/RouterCo
 import { MainRouterContext } from "../../routes";
 import { Alert, AlertActionLink, AlertGroup, Chip, ChipGroup } from "@patternfly/react-core";
 
+import { PACSSeries } from "../../api/pfdcm";
 import UserLibrary from "./components/UserLibrary";
 import PACSLookup from "./components/PACSLookup";
-import { PACSDemo } from "./components/PACSLookup/demo";
-import { PACSSeries } from "../../api/pfdcm";
+import SwiftLookup from "./components/SwiftLookup";
 
 export const [State, LibraryContext] = RouterContext({
 	state: {
@@ -16,6 +16,8 @@ export const [State, LibraryContext] = RouterContext({
 })
 
 export const Library: React.FC = () => {
+	document.title = 'Data Library';
+
 	const [state, setState] = useState(State)
 	const [route, setRoute] = useState<string>()
 	
@@ -61,9 +63,8 @@ export const Library: React.FC = () => {
 		<>
 		<RouterProvider {...{actions, state, route, setRoute}} context={LibraryContext}>
 			<Route exact path="/library" component={UserLibrary} />
-			<Route path="/library/swift" component={PACSLookup} />
+			<Route path="/library/swift" component={SwiftLookup} />
 			<Route path="/library/pacs" component={PACSLookup} />
-			<Route path="/library/pacsdemo" component={PACSDemo} />
 		</RouterProvider>
 
 		{ state.selectData.length !== 0 &&
@@ -84,7 +85,7 @@ export const Library: React.FC = () => {
 						{
 							state.selectData.map(({ seriesInstanceUID, seriesDescription, patientName, modality }) => (
 								<Chip key={seriesInstanceUID} onClick={actions.clear.bind(Library, seriesInstanceUID)}>
-									{ patientName }, { modality }, {seriesDescription}
+									{ patientName } [{ modality }] {seriesDescription}
 								</Chip>
 							))
 						}
